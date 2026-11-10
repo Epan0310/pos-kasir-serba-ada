@@ -2,90 +2,63 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Struk #{{ $transaction->invoice_number }}</title>
+    <title>Struk Penjualan - {{ $transaction->invoice_number }}</title>
     <style>
-        /* CSS khusus format Kertas Thermal 58mm */
         @page {
-            size: 58mm auto;
             margin: 0;
         }
-
         body {
             font-family: 'Courier New', Courier, monospace;
             width: 58mm;
             margin: 0 auto;
             padding: 10px;
-            font-size: 11px;
+            font-size: 12px;
             color: #000;
-            background: #fff;
         }
-
         .text-center { text-align: center; }
-        .text-right { text-align: right; }
+        .text-end { text-align: right; }
         .fw-bold { font-weight: bold; }
-        
         .line {
-            border-bottom: 1px dashed #000;
+            border-top: 1px dashed #000;
             margin: 6px 0;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
         }
-
         td {
-            vertical-align: top;
             padding: 2px 0;
-        }
-
-        .btn-print-box {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .btn-print {
-            background: #1C1917;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        /* Sembunyikan tombol cetak saat dicetak ke printer */
-        @media print {
-            .btn-print-box { display: none; }
+            vertical-align: top;
         }
     </style>
 </head>
-<body>
-
-    <div class="btn-print-box">
-        <button onclick="window.print()" class="btn-print">Cetak Struk</button>
-    </div>
+<body onload="window.print()">
 
     <!-- Header Struk -->
     <div class="text-center">
-        <div class="fw-bold" style="font-size: 14px;">SERBA ADA MART</div>
-        <div>Jl. Raya Utama No. 1, City</div>
-        <div>Telp: 0812-3456-7890</div>
+        <h3 style="margin: 0; font-size: 14px;">SERBA ADA MART</h3>
+        <small>Jl. Raya Utama No. 1, City</small><br>
+        <small>Telp: 0812-3456-7890</small>
     </div>
 
     <div class="line"></div>
 
-    <!-- Info Transaksi -->
-    <div>
-        <div>No   : {{ $transaction->invoice_number }}</div>
-        <div>Tgl  : {{ $transaction->created_at->format('d-m-Y H:i') }}</div>
-        <div>Kasir: {{ $transaction->user->name ?? 'Kasir' }}</div>
-    </div>
+    <!-- Informasi Transaksi -->
+    <table>
+        <tr>
+            <td>No : {{ $transaction->invoice_number }}</td>
+        </tr>
+        <tr>
+            <td>Tgl: {{ $transaction->created_at->format('d-m-Y H:i') }}</td>
+        </tr>
+        <tr>
+            <td>Kasir: {{ $transaction->user->name ?? 'Kasir Store' }}</td>
+        </tr>
+    </table>
 
     <div class="line"></div>
 
-    <!-- Item Belanja -->
+    <!-- Detail Barang -->
     <table>
         @foreach($transaction->details as $detail)
             <tr>
@@ -93,43 +66,52 @@
             </tr>
             <tr>
                 <td>{{ $detail->qty }} x {{ number_format($detail->price, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+                <td class="text-end">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
             </tr>
         @endforeach
     </table>
 
     <div class="line"></div>
 
-    <!-- Total & Pembayaran -->
+    <!-- Rincian Pembayaran, Diskon & Pajak -->
     <table>
         <tr>
-            <td>Total</td>
-            <td class="text-right fw-bold">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</td>
+            <td>Subtotal</td>
+            <td class="text-end">Rp {{ number_format($transaction->details->sum('subtotal'), 0, ',', '.') }}</td>
+        </tr>
+        @if($transaction->discount > 0)
+            <tr>
+                <td>Diskon Promo</td>
+                <td class="text-end">- Rp {{ number_format($transaction->discount, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        @if($transaction->tax > 0)
+            <tr>
+                <td>Pajak (10%)</td>
+                <td class="text-end">+ Rp {{ number_format($transaction->tax, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td class="fw-bold">TOTAL</td>
+            <td class="text-end fw-bold">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td>Bayar</td>
-            <td class="text-right">Rp {{ number_format($transaction->pay_amount, 0, ',', '.') }}</td>
+            <td class="text-end">Rp {{ number_format($transaction->pay_amount, 0, ',', '.') }}</td>
         </tr>
         <tr>
             <td>Kembali</td>
-            <td class="text-right fw-bold">Rp {{ number_format($transaction->change_amount, 0, ',', '.') }}</td>
+            <td class="text-end">Rp {{ number_format($transaction->change_amount, 0, ',', '.') }}</td>
         </tr>
     </table>
 
     <div class="line"></div>
 
-    <!-- Footer Struk -->
-    <div class="text-center" style="margin-top: 10px;">
-        <div>-- Terima Kasih --</div>
-        <div>Barang yang sudah dibeli</div>
-        <div>tidak dapat ditukar</div>
+    <!-- Footer -->
+    <div class="text-center" style="margin-top: 8px;">
+        <small>-- Terima Kasih --</small><br>
+        <small>Barang yang sudah dibeli<br>tidak dapat ditukar</small>
     </div>
 
-    <script>
-        // Otomatis buka dialog print saat halaman selesai dimuat
-        window.onload = function() {
-            window.print();
-        }
-    </script>
 </body>
 </html>

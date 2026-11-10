@@ -2,11 +2,22 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    protected $fillable = ['user_id', 'invoice_number', 'total_price', 'pay_amount', 'change_amount'];
+    use HasFactory;
+
+    protected $fillable = [
+        'invoice_number',
+        'user_id',
+        'total_price',
+        'discount', // <-- Pastikan ini ada!
+        'tax', // <-- Pastikan ini ada!
+        'pay_amount',
+        'change_amount',
+    ];
 
     public function user()
     {

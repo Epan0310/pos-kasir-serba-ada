@@ -2,6 +2,23 @@
 
 @section('title', 'Kelola Produk - SerbaAda Mart')
 
+<!-- Alert Stok Menipis untuk Admin -->
+@php
+    $lowStockProducts = $products->filter(function($p) { return $p->stock <= 5; });
+@endphp
+
+@if($lowStockProducts->count() > 0)
+    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between mb-3" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning me-3"></i>
+            <div>
+                <strong class="d-block">Perhatian! Ada {{ $lowStockProducts->count() }} produk dengan stok menipis ($\le 5$ pcs).</strong>
+                <small class="text-muted">Produk: {{ $lowStockProducts->pluck('name')->implode(', ') }}</small>
+            </div>
+        </div>
+    </div>
+@endif
+
 @section('content')
 <div class="container py-4">
     @if(session('success'))
@@ -91,7 +108,20 @@
                                     <td class="fw-bold">{{ $prod->name }}</td>
                                     <td>{{ $prod->category->name }}</td>
                                     <td class="text-success fw-bold">Rp {{ number_format($prod->sell_price, 0, ',', '.') }}</td>
-                                    <td>{{ $prod->stock }}</td>
+                                    
+                                    <!-- Kolom Stok dengan Badge Peringatan -->
+                                    <td>
+                                        @if($prod->stock <= 0)
+                                            <span class="badge bg-danger px-2 py-1">Habis (0)</span>
+                                        @elseif($prod->stock <= 5)
+                                            <span class="badge bg-warning text-dark px-2 py-1 fw-bold">
+                                                <i class="bi bi-exclamation-circle me-1"></i>{{ $prod->stock }} (Menipis)
+                                            </span>
+                                        @else
+                                            <span class="badge bg-success bg-opacity-75 px-2 py-1">{{ $prod->stock }}</span>
+                                        @endif
+                                    </td>
+
                                     <td>
                                         <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editModal{{ $prod->id }}">
                                             <i class="bi bi-pencil"></i>

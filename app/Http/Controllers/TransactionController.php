@@ -24,74 +24,67 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'items'       => 'required|array|min:1',
-            'items.*.id'  => 'required|exists:products,id',
-            'items.*.qty' => 'required|integer|min:1',
-            'pay_amount'  => 'required|numeric',
+            'items' => 'required|array',
+            'pay_amount' => 'required|numeric',
+            'discount' => 'nullable|numeric|min:0',
         ]);
 
-        $totalPrice = 0;
-        $itemsToProcess = [];
+        $items = $request->items;
+        $rawTotal = 0;
 
-        foreach ($request->items as $item) {
+        // Hitung Subtotal Kategori & Cek Stok
+        foreach ($items as $item) {
             $product = Product::findOrFail($item['id']);
-
             if ($product->stock < $item['qty']) {
-                return redirect()->back()->with('error', "Stok barang '{$product->name}' tidak cukup!");
+                return redirect()->back()->with('error', "Stok produk {$product->name} tidak mencukupi!");
             }
-
-            $subtotal = $product->sell_price * $item['qty'];
-            $totalPrice += $subtotal;
-
-            $itemsToProcess[] = [
-                'product'  => $product,
-                'qty'      => $item['qty'],
-                'price'    => $product->sell_price,
-                'subtotal' => $subtotal,
-            ];
+            $rawTotal += $product->sell_price * $item['qty'];
         }
 
-        if ($request->pay_amount < $totalPrice) {
-            return redirect()->back()->with('error', 'Uang pembayaran kurang!');
+        // Hitung Nominal Diskon
+        $discount = $request->discount ?? 0;
+        $afterDiscount = max(0, $rawTotal - $discount);
+
+        // Hitung Pajak 10% (After Discount)
+        $tax = round($afterDiscount * 0.10);
+
+        // Grand Total Akhir
+        $grandTotal = $afterDiscount + $tax;
+
+        // Cek Uang Pembayaran
+        if ($request->pay_amount < $grandTotal) {
+            return redirect()->back()->with('error', 'Uang pembayarannya kurang!');
         }
 
-        $changeAmount = $request->pay_amount - $totalPrice;
-        $createdTransaction = null;
-
-        DB::transaction(function () use ($request, $itemsToProcess, $totalPrice, $changeAmount, &$createdTransaction) {
-            $user = User::first() ?? User::create([
-                'name'     => 'Kasir Utama',
-                'username' => 'kasir',
-                'email'    => 'kasir@serbaada.com',
-                'password' => bcrypt('123456'),
-                'role'     => 'kasir',
-            ]);
-
-            $createdTransaction = Transaction::create([
-                'user_id'        => $user->id,
-                'invoice_number' => 'TRX-' . date('YmdHis'),
-                'total_price'    => $totalPrice,
-                'pay_amount'     => $request->pay_amount,
-                'change_amount'  => $changeAmount,
-            ]);
-
-            foreach ($itemsToProcess as $item) {
-                TransactionDetail::create([
-                    'transaction_id' => $createdTransaction->id,
-                    'product_id'     => $item['product']->id,
-                    'qty'            => $item['qty'],
-                    'price'          => $item['price'],
-                    'subtotal'       => $item['subtotal'],
-                ]);
-
-                $item['product']->decrement('stock', $item['qty']);
-            }
-        });
-
-        return redirect()->back()->with([
-            'success'  => 'Transaksi Berhasil! Kembalian: Rp ' . number_format($changeAmount, 0, ',', '.'),
-            'print_id' => $createdTransaction->id,
+        // Simpan Transaksi Utama
+        $transaction = Transaction::create([
+            'invoice_number' => 'TRX-' . date('YmdHis'),
+            'user_id'        => auth()->id(),
+            'total_price'    => $grandTotal,
+            'discount'       => $discount,
+            'tax'            => $tax, // <-- Simpan pajak
+            'pay_amount'     => $request->pay_amount,
+            'change_amount'  => $request->pay_amount - $grandTotal,
         ]);
+
+        // Simpan Rincian & Potong Stok
+        foreach ($items as $item) {
+            $product = Product::findOrFail($item['id']);
+            
+            TransactionDetail::create([
+                'transaction_id' => $transaction->id,
+                'product_id'     => $product->id,
+                'qty'            => $item['qty'],
+                'price'          => $product->sell_price,
+                'subtotal'       => $product->sell_price * $item['qty'],
+            ]);
+
+            $product->decrement('stock', $item['qty']);
+        }
+
+        return redirect()->route('transactions.index')
+            ->with('success', 'Transaksi Berhasil!')
+            ->with('print_id', $transaction->id);
     }
 
     // 3. Tampilkan Halaman Struk Thermal Penjualan

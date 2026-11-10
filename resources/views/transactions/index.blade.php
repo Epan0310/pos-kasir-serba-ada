@@ -4,14 +4,13 @@
 
 @push('styles')
 <style>
-    /* Split Screen Layout & Arasta Style */
     .pos-wrapper {
         display: flex;
         height: calc(100vh - 58px);
         overflow: hidden;
     }
     .left-cart {
-        width: 360px;
+        width: 380px;
         background: var(--arasta-surface);
         border-end: 1px solid var(--arasta-border);
         display: flex;
@@ -23,15 +22,11 @@
         overflow-y: auto;
         padding: 16px;
     }
-    
-    /* Grid Produk Compact (Muat Lebih Banyak Per Baris) */
     .products-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 12px;
     }
-
-    /* Shopee / Retail Compact Card Style */
     .product-card {
         background: var(--arasta-surface);
         border: 1px solid var(--arasta-border);
@@ -63,10 +58,6 @@
         height: 100%;
         object-fit: contain;
         padding: 8px;
-        transition: transform 0.2s ease;
-    }
-    .product-card:hover .product-image-box img {
-        transform: scale(1.06);
     }
 </style>
 @endpush
@@ -80,7 +71,7 @@
             <button class="btn btn-sm btn-outline-danger py-0 px-2 fs-7" onclick="clearCart()">Clear All</button>
         </div>
 
-        <!-- Alert Notifikasi Flash (Tombol X Berfungsi) -->
+        <!-- Alert Flash -->
         @if(session('success'))
             <div class="px-3 pt-2">
                 <div class="alert alert-success alert-dismissible fade show mb-0 p-3 fs-7 border-0 shadow-sm position-relative" role="alert">
@@ -92,7 +83,7 @@
                             </a>
                         @endif
                     </div>
-                    <button type="button" class="btn-close p-3 position-absolute top-0 end-0" data-bs-dismiss="alert" aria-label="Close" onclick="this.closest('.alert').remove()"></button>
+                    <button type="button" class="btn-close p-3 position-absolute top-0 end-0" data-bs-dismiss="alert" onclick="this.closest('.alert').remove()"></button>
                 </div>
             </div>
         @endif
@@ -101,7 +92,7 @@
             <div class="px-3 pt-2">
                 <div class="alert alert-danger alert-dismissible fade show mb-0 p-3 fs-7 border-0 shadow-sm position-relative" role="alert">
                     <div class="fw-bold pe-4">{{ session('error') }}</div>
-                    <button type="button" class="btn-close p-3 position-absolute top-0 end-0" data-bs-dismiss="alert" aria-label="Close" onclick="this.closest('.alert').remove()"></button>
+                    <button type="button" class="btn-close p-3 position-absolute top-0 end-0" data-bs-dismiss="alert" onclick="this.closest('.alert').remove()"></button>
                 </div>
             </div>
         @endif
@@ -121,12 +112,42 @@
             <div id="hiddenCartInputs"></div>
             
             <div class="p-3 bg-light border-top">
+                <!-- Subtotal -->
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted small">Subtotal</span>
+                    <span class="fw-bold fs-7 text-secondary" id="displaySubtotal">Rp 0</span>
+                </div>
+
+                <!-- Diskon Promo -->
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold mb-0"><i class="bi bi-percent text-danger me-1"></i>Diskon Promo</label>
+                        <span class="text-danger small fw-bold" id="displayDiscount">- Rp 0</span>
+                    </div>
+                    
+                    <div class="row g-1 mb-1">
+                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-dark w-100 py-0 btn-disc" onclick="setDiscountPercent(0, this)">0%</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-dark w-100 py-0 btn-disc" onclick="setDiscountPercent(5, this)">5%</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-dark w-100 py-0 btn-disc" onclick="setDiscountPercent(10, this)">10%</button></div>
+                        <div class="col-3"><button type="button" class="btn btn-sm btn-outline-dark w-100 py-0 btn-disc" onclick="setDiscountPercent(15, this)">15%</button></div>
+                    </div>
+
+                    <input type="number" name="discount" id="discountInput" class="form-control form-control-sm" placeholder="Nominal Diskon Rp (Opsional)" value="0" oninput="calculateTotal()">
+                </div>
+
+                <!-- Pajak 10% (After Discount) -->
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small">Total Tagihan</span>
-                    <span class="fw-bold fs-5" id="displayTotal">Rp 0</span>
+                    <span class="text-muted small">Pajak (10%)</span>
+                    <span class="fw-bold fs-7 text-dark" id="displayTax">+ Rp 0</span>
+                </div>
+
+                <!-- Total Akhir Tagihan -->
+                <div class="d-flex justify-content-between align-items-center mb-2 pt-2 border-top">
+                    <span class="fw-bold text-dark">Total Tagihan</span>
+                    <span class="fw-bold fs-5 text-dark" id="displayTotal">Rp 0</span>
                 </div>
                 
-                <div class="mb-3">
+                <div class="mb-2">
                     <label class="form-label small fw-bold">Uang Dibayar (Rp)</label>
                     <input type="number" name="pay_amount" id="payAmountInput" class="form-control form-control-lg fw-bold" placeholder="0" required oninput="calculateChange()">
                 </div>
@@ -143,9 +164,8 @@
         </form>
     </div>
 
-    <!-- PANEL KANAN: Katalog Produk Compact -->
+    <!-- PANEL KANAN: Katalog Produk -->
     <div class="right-products">
-        <!-- Search & Filter -->
         <div class="row g-2 mb-3">
             <div class="col-md-5">
                 <div class="input-group">
@@ -161,12 +181,10 @@
             </div>
         </div>
 
-        <!-- Grid Cards Ringkas 150px -->
         <div class="products-grid" id="productsGrid">
             @foreach($products as $prod)
                 <div class="product-item-wrapper" data-category="{{ $prod->category_id }}" data-name="{{ strtolower($prod->name) }}" data-code="{{ strtolower($prod->code) }}">
                     <div class="product-card" onclick="addToCart({{ $prod->id }}, '{{ addslashes($prod->name) }}', {{ $prod->sell_price }}, {{ $prod->stock }})">
-                        
                         <div class="product-image-box border-bottom">
                             @if($prod->image)
                                 <img src="{{ asset('storage/' . $prod->image) }}" alt="{{ $prod->name }}">
@@ -176,13 +194,31 @@
                                     <small style="font-size: 10px;">Belum ada foto</small>
                                 </div>
                             @endif
+
+                            <!-- Kode Barcode (Kiri Atas) -->
                             <span class="badge bg-dark bg-opacity-75 position-absolute top-0 start-0 m-1 rounded-pill px-2 py-1" style="font-size: 9px;">{{ $prod->code }}</span>
+
+                            <!-- Peringatan Stok Menipis / Habis (Kanan Atas) -->
+                            @if($prod->stock <= 0)
+                                <span class="badge bg-danger position-absolute top-0 end-0 m-1 rounded-pill px-2 py-1" style="font-size: 9px;">Habis</span>
+                            @elseif($prod->stock <= 5)
+                                <span class="badge bg-warning text-dark position-absolute top-0 end-0 m-1 rounded-pill px-2 py-1 fw-bold" style="font-size: 9px;">Stok Menipis!</span>
+                            @endif
                         </div>
 
                         <div class="p-2 d-flex flex-column justify-content-between flex-grow-1">
                             <div>
                                 <h6 class="fw-bold text-dark mb-1 text-truncate" style="font-size: 0.825rem;" title="{{ $prod->name }}">{{ $prod->name }}</h6>
-                                <small class="text-muted d-block mb-1" style="font-size: 0.75rem;">Stok: <strong>{{ $prod->stock }}</strong></small>
+                                
+                                <!-- Highlight Teks Stok -->
+                                <small class="d-block mb-1" style="font-size: 0.75rem;">
+                                    Stok: 
+                                    @if($prod->stock <= 5)
+                                        <strong class="text-danger fw-bold">{{ $prod->stock }} (Restock!)</strong>
+                                    @else
+                                        <strong class="text-muted">{{ $prod->stock }}</strong>
+                                    @endif
+                                </small>
                             </div>
                             
                             <div class="pt-1 border-top d-flex justify-content-between align-items-center">
@@ -194,7 +230,6 @@
                                 </span>
                             </div>
                         </div>
-
                     </div>
                 </div>
             @endforeach
@@ -237,6 +272,7 @@
 
     function clearCart() {
         cart = [];
+        document.getElementById('discountInput').value = 0;
         renderCart();
     }
 
@@ -244,26 +280,22 @@
         const listEl = document.getElementById('cartItemsList');
         const emptyEl = document.getElementById('emptyCartNotice');
         const inputsEl = document.getElementById('hiddenCartInputs');
-        const btnPay = document.getElementById('btnPay');
         
         listEl.innerHTML = '';
         inputsEl.innerHTML = '';
 
         if (cart.length === 0) {
             emptyEl.style.display = 'block';
+            document.getElementById('displaySubtotal').innerText = 'Rp 0';
             document.getElementById('displayTotal').innerText = 'Rp 0';
-            btnPay.disabled = true;
-            calculateChange();
+            document.getElementById('btnPay').disabled = true;
+            calculateTotal();
             return;
         }
 
         emptyEl.style.display = 'none';
-        let total = 0;
 
         cart.forEach((item, index) => {
-            let subtotal = item.price * item.qty;
-            total += subtotal;
-
             listEl.innerHTML += `
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <div>
@@ -284,18 +316,53 @@
             `;
         });
 
-        document.getElementById('displayTotal').innerText = 'Rp ' + total.toLocaleString('id-ID');
-        btnPay.disabled = false;
+        document.getElementById('btnPay').disabled = false;
+        calculateTotal();
+    }
+
+    function setDiscountPercent(percent, btn) {
+        document.querySelectorAll('.btn-disc').forEach(b => b.classList.remove('btn-dark', 'text-white'));
+        if (btn) btn.classList.add('btn-dark', 'text-white');
+
+        let rawSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        let discAmount = Math.round(rawSubtotal * (percent / 100));
+        document.getElementById('discountInput').value = discAmount;
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        let rawSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        let discAmount = parseFloat(document.getElementById('discountInput').value) || 0;
+        
+        if (discAmount > rawSubtotal) discAmount = rawSubtotal;
+        
+        // Hitung Setelah Diskon & Hitung Pajak 10%
+        let afterDiscount = rawSubtotal - discAmount;
+        let taxAmount = Math.round(afterDiscount * 0.10);
+        let finalTotal = afterDiscount + taxAmount;
+
+        document.getElementById('displaySubtotal').innerText = 'Rp ' + rawSubtotal.toLocaleString('id-ID');
+        document.getElementById('displayDiscount').innerText = '- Rp ' + discAmount.toLocaleString('id-ID');
+        document.getElementById('displayTax').innerText = '+ Rp ' + taxAmount.toLocaleString('id-ID');
+        document.getElementById('displayTotal').innerText = 'Rp ' + finalTotal.toLocaleString('id-ID');
+
         calculateChange();
     }
 
     function calculateChange() {
-        let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        let rawSubtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        let discAmount = parseFloat(document.getElementById('discountInput').value) || 0;
+        
+        if (discAmount > rawSubtotal) discAmount = rawSubtotal;
+        let afterDiscount = rawSubtotal - discAmount;
+        let taxAmount = Math.round(afterDiscount * 0.10);
+        let finalTotal = afterDiscount + taxAmount;
+
         let pay = parseFloat(document.getElementById('payAmountInput').value) || 0;
-        let change = pay - total;
+        let change = pay - finalTotal;
         let displayEl = document.getElementById('displayChange');
 
-        if (change >= 0 && total > 0) {
+        if (change >= 0 && rawSubtotal > 0) {
             displayEl.innerText = 'Rp ' + change.toLocaleString('id-ID');
             displayEl.className = 'fw-bold fs-6 text-success';
         } else {
@@ -322,7 +389,6 @@
         document.querySelectorAll('.filter-cat-btn').forEach(b => b.classList.remove('active', 'btn-dark'));
         document.querySelectorAll('.filter-cat-btn').forEach(b => b.classList.add('btn-outline-secondary'));
         btn.classList.add('active', 'btn-dark');
-        btn.classList.remove('btn-outline-secondary');
 
         let items = document.querySelectorAll('.product-item-wrapper');
         items.forEach(item => {
