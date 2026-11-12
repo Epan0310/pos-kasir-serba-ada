@@ -2,25 +2,27 @@
 
 @section('title', 'Kelola Produk - SerbaAda Mart')
 
-<!-- Alert Stok Menipis untuk Admin -->
-@php
-    $lowStockProducts = $products->filter(function($p) { return $p->stock <= 5; });
-@endphp
 
-@if($lowStockProducts->count() > 0)
-    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between mb-3" role="alert">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning me-3"></i>
-            <div>
-                <strong class="d-block">Perhatian! Ada {{ $lowStockProducts->count() }} produk dengan stok menipis (&le; 5 pcs).</strong>
-                <small class="text-muted">Produk: {{ $lowStockProducts->pluck('name')->implode(', ') }}</small>
-            </div>
-        </div>
-    </div>
-@endif
 
 @section('content')
 <div class="container py-4">
+
+
+    <!-- ALERT STOK MENIPIS -->
+    @php
+        $lowStockProducts = \App\Models\Product::where('stock', '<=', 5)->get();
+    @endphp
+
+    @if($lowStockProducts->count() > 0)
+        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4 me-3 text-warning"></i>
+            <div>
+                <strong>Perhatian! Ada {{ $lowStockProducts->count() }} produk dengan stok menipis (&le; 5 pcs).</strong>
+                <div class="small text-muted">Produk: {{ $lowStockProducts->pluck('name')->implode(', ') }}</div>
+            </div>
+        </div>
+    @endif
+
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
