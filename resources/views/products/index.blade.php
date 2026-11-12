@@ -12,7 +12,7 @@
         <div class="d-flex align-items-center">
             <i class="bi bi-exclamation-triangle-fill fs-4 text-warning me-3"></i>
             <div>
-                <strong class="d-block">Perhatian! Ada {{ $lowStockProducts->count() }} produk dengan stok menipis ($\le 5$ pcs).</strong>
+                <strong class="d-block">Perhatian! Ada {{ $lowStockProducts->count() }} produk dengan stok menipis (&le; 5 pcs).</strong>
                 <small class="text-muted">Produk: {{ $lowStockProducts->pluck('name')->implode(', ') }}</small>
             </div>
         </div>

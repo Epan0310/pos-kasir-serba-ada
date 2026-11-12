@@ -36,4 +36,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/', function () {
         return redirect()->route('transactions.index');
     });
+
+    Route::get('/transactions/history', [TransactionController::class, 'history'])->name('transactions.history');
 });

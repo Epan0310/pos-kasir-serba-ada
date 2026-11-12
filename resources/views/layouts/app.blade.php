@@ -68,7 +68,14 @@
                 @if(auth()->user()->role === 'admin')
                     <a href="{{ route('categories.index') }}" class="{{ request()->routeIs('categories.*') ? 'active' : '' }}">Kategori</a>
                     <a href="{{ route('products.index') }}" class="{{ request()->routeIs('products.*') ? 'active' : '' }}">Produk</a>
-                    <a href="{{ route('transactions.index') }}" class="{{ request()->routeIs('transactions.*') ? 'active' : '' }}">Kasir</a>
+                @endif
+
+                <!-- Menu Akses Umum (Kasir & Admin) -->
+                <a href="{{ route('transactions.index') }}" class="{{ request()->routeIs('transactions.index') ? 'active' : '' }}">Kasir</a>
+                <a href="{{ route('transactions.history') }}" class="{{ request()->routeIs('transactions.history') ? 'active' : '' }}">Riwayat</a>
+
+                <!-- Menu Laporan Khusus Admin -->
+                @if(auth()->user()->role === 'admin')
                     <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">Laporan</a>
                 @endif
 

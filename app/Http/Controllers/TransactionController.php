@@ -93,4 +93,23 @@ class TransactionController extends Controller
         $transaction = Transaction::with(['user', 'details.product'])->findOrFail($id);
         return view('transactions.print', compact('transaction'));
     }
+
+    public function history(Request $request)
+    {
+        $query = Transaction::with(['user', 'details.product'])->latest();
+
+        // Filter Pencarian Invoice
+        if ($request->filled('search')) {
+            $query->where('invoice_number', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter Berdasarkan Tanggal
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        $transactions = $query->paginate(10)->withQueryString();
+
+        return view('transactions.history', compact('transactions'));
+        }
 }
